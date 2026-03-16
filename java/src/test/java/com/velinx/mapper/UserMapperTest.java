@@ -14,8 +14,8 @@ class UserMapperTest {
     void insertUser() {
         System.out.println("--- 正在执行插入测试 ---");
         User user = new User();
-        user.setUsername("velia_User");
-        user.setEmail("test@velia.com");
+        user.setUsername("velinx_User");
+        user.setEmail("test@velinx.com");
 
         userMapper.insertUser(user);
         System.out.println("插入成功！");
@@ -28,8 +28,8 @@ class UserMapperTest {
 //        return args -> {
 //            System.out.println("--- 正在执行插入测试 ---");
 //            User user = new User();
-//            user.setUsername("velia_User");
-//            user.setEmail("test@velia.com");
+//            user.setUsername("velinx_User");
+//            user.setEmail("test@velinx.com");
 //
 //            userMapper.insertUser(user);
 //            System.out.println("插入成功！");

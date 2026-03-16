@@ -1,4 +1,4 @@
-# velia Java 后端流程图
+# velinx Java 后端流程图
 
 这份文档按当前代码的实际实现整理，重点围绕 `ChatBotService`、`ChatBot`、记忆系统、工具系统和 TTS 播报来说明。
 

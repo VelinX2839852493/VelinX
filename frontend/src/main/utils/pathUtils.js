@@ -98,7 +98,7 @@ function getJavaBinaryPath(options = {}) {
     // 开发环境：运行 target 下的 jar 包
     if (!getIsPackaged()) {
         const javaProjectRoot = path.join(getWorkspaceRoot(), 'java');
-        const jarPath = path.join(javaProjectRoot, 'target', 'velia-1.0-SNAPSHOT.jar');
+        const jarPath = path.join(javaProjectRoot, 'target', 'velinx-1.0-SNAPSHOT.jar');
 
         return {
             command: javaExec,
