@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: file:;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>背景设置</title>
+    <link rel="stylesheet" href="../../assets/styles/ui-theme.css">
+    <style>
+        body {
+            padding: 20px;
+        }
+
+        .bg-shell {
+            max-width: 560px;
+            padding: 0;
+        }
+
+        .bg-layout {
+            display: grid;
+            gap: 18px;
+        }
+
+        .hero-panel {
+            display: grid;
+            gap: 16px;
+            padding: 24px;
+        }
+
+        .section-card {
+            padding: 20px;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        .radio-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.88);
+            border: 1px solid rgba(24, 48, 69, 0.08);
+            color: var(--vx-ink-strong);
+            font-weight: 700;
+        }
+
+        .radio-chip input {
+            min-height: 16px;
+        }
+
+        .inline-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        #custom-color {
+            width: 72px;
+            min-width: 72px;
+            min-height: 48px;
+            padding: 6px;
+        }
+
+        #color-hex {
+            color: var(--vx-ink-soft);
+            font-weight: 700;
+        }
+
+        #image-preview {
+            margin-top: 16px;
+            min-height: 120px;
+            padding: 12px;
+            border: 1px dashed rgba(24, 48, 69, 0.16);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: rgba(248, 251, 255, 0.92);
+            color: var(--vx-ink-soft);
+            font-size: 12px;
+        }
+
+        #image-preview img {
+            max-width: 100%;
+            max-height: 160px;
+            object-fit: contain;
+            border-radius: 14px;
+        }
+
+        .footer {
+            padding: 0 24px 24px;
+        }
+
+        .footer #save-btn {
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="workspace-body">
+<div class="window-shell bg-shell">
+    <div class="glass-panel bg-layout">
+        <section class="hero-panel">
+            <div class="hero-topline">Backdrop Studio</div>
+            <div>
+                <h1 class="hero-title">文件窗口背景</h1>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-label">Background Type</div>
+            <h2 class="section-title">显示模式</h2>
+            <div class="radio-group">
+                <label class="radio-chip"><input type="radio" name="bgType" value="color" checked> 纯色</label>
+                <label class="radio-chip"><input type="radio" name="bgType" value="image"> 图片</label>
+            </div>
+        </section>
+
+        <section id="color-controls" class="section-card">
+            <div class="section-label">Color</div>
+            <h2 class="section-title">颜色选择</h2>
+            <div class="inline-row">
+                <input type="color" id="custom-color" value="#ffffff">
+                <span id="color-hex">#ffffff</span>
+            </div>
+        </section>
+
+        <section id="image-controls" class="section-card" style="display: none;">
+            <div class="section-label">Image</div>
+            <h2 class="section-title">图片背景</h2>
+            <div class="inline-row">
+                <button id="select-image-btn" class="vx-btn secondary" type="button">选择本地图片</button>
+            </div>
+            <div id="image-preview">未选择图片</div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-label">Opacity</div>
+            <h2 class="section-title">透明度</h2>
+            <div class="inline-row">
+                <input type="range" id="opacity-slider" min="0" max="100" value="100">
+                <span id="opacity-value" class="pill">100%</span>
+            </div>
+        </section>
+
+        <div class="footer">
+            <button id="save-btn" class="vx-btn primary" type="button">保存并应用</button>
+        </div>
+    </div>
+</div>
+
+<script src="../../scripts/pages/file-background-config.js"></script>
+</body>
+</html>

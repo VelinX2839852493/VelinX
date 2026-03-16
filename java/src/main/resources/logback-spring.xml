@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <property name="LOG_DIR" value="${LOG_DIR:-logs}" />
+    <property name="CONSOLE_PATTERN" value="%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n" />
+    <property name="FILE_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n" />
+    <property name="CHAT_PATTERN" value="%d{HH:mm:ss} %msg%n" />
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="APP_FILE" class="ch.qos.logback.classic.sift.SiftingAppender">
+        <discriminator class="com.velinx.logging.TenMinuteSlotDiscriminator" />
+        <sift>
+            <appender name="APP_FILE-${bucket}" class="ch.qos.logback.core.FileAppender">
+                <file>${LOG_DIR}/${bucket}-app/app.log</file>
+                <append>true</append>
+                <encoder>
+                    <pattern>${FILE_PATTERN}</pattern>
+                    <charset>UTF-8</charset>
+                </encoder>
+            </appender>
+        </sift>
+    </appender>
+
+    <appender name="CHAT_FILE" class="ch.qos.logback.classic.sift.SiftingAppender">
+        <discriminator class="com.velinx.logging.TenMinuteSlotDiscriminator" />
+        <sift>
+            <appender name="CHAT_FILE-${bucket}" class="ch.qos.logback.core.FileAppender">
+                <file>${LOG_DIR}/${bucket}-chat/chat.log</file>
+                <append>true</append>
+                <encoder>
+                    <pattern>${CHAT_PATTERN}</pattern>
+                    <charset>UTF-8</charset>
+                </encoder>
+            </appender>
+        </sift>
+    </appender>
+
+    <appender name="LLM_DEBUG_FILE" class="ch.qos.logback.classic.sift.SiftingAppender">
+        <discriminator class="com.velinx.logging.TenMinuteSlotDiscriminator" />
+        <sift>
+            <appender name="LLM_DEBUG_FILE-${bucket}" class="ch.qos.logback.core.FileAppender">
+                <file>${LOG_DIR}/${bucket}-llm-debug/llm-debug.log</file>
+                <append>true</append>
+                <encoder>
+                    <pattern>${FILE_PATTERN}</pattern>
+                    <charset>UTF-8</charset>
+                </encoder>
+            </appender>
+        </sift>
+    </appender>
+
+    <logger name="com.velinx.chat.transcript" level="INFO" additivity="false">
+        <appender-ref ref="CHAT_FILE" />
+    </logger>
+
+    <logger name="dev.langchain4j" level="DEBUG" additivity="false">
+        <appender-ref ref="LLM_DEBUG_FILE" />
+    </logger>
+
+    <logger name="dev.ai4j.openai4j" level="DEBUG" additivity="false">
+        <appender-ref ref="LLM_DEBUG_FILE" />
+    </logger>
+
+    <logger name="okhttp3" level="DEBUG" additivity="false">
+        <appender-ref ref="LLM_DEBUG_FILE" />
+    </logger>
+
+    <logger name="com.velinx" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="APP_FILE" />
+    </logger>
+
+    <root level="WARN">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="APP_FILE" />
+    </root>
+</configuration>

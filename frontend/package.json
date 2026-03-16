@@ -1,0 +1,34 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "src/main/index.js",
+  "scripts": {
+    "start": "chcp 65001 && electron .",
+    "build": "node scripts/verify-local-java-backend.js && electron-builder",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^26.8.1"
+  },
+  "dependencies": {
+    "@pixi-spine/all-3.8": "^4.0.6",
+    "@pixi-spine/all-4.1": "^4.0.6",
+    "pixi-live2d-display": "^0.4.0",
+    "pixi.js": "^7.4.3"
+  },
+  "build": {
+    "appId": "com.velinx.desktop",
+    "productName": "velinx",
+    "extraResources": [
+      {
+        "from": "resources/backend/java_service/mainbot.jar",
+        "to": "backend/java_service/mainbot.jar"
+      }
+    ]
+  }
+}

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: file:;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 配置</title>
+    <link rel="stylesheet" href="../assets/styles/ui-theme.css">
+    <style>
+        body {
+            padding: 22px;
+        }
+
+        .api-shell {
+            max-width: 920px;
+            padding: 0;
+        }
+
+        .api-layout,
+        .hero-panel,
+        .field-grid {
+            display: grid;
+            gap: 18px;
+        }
+
+        .config-card,
+        .path-card {
+            padding: 22px;
+            border: 1px solid var(--vx-line-soft);
+            border-radius: var(--vx-radius-lg);
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 14px 28px rgba(24, 48, 69, 0.05);
+        }
+
+        .config-card h3,
+        .path-card h3 {
+            margin: 0 0 8px;
+            color: var(--vx-ink-strong);
+            font-family: var(--vx-font-display);
+            font-size: 22px;
+        }
+
+        .config-card p,
+        .path-card p {
+            margin: 0 0 14px;
+            color: var(--vx-ink-soft);
+            line-height: 1.6;
+        }
+
+        .config-section-title {
+            margin: 0 0 10px;
+            color: var(--vx-ink-strong);
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .path-chip {
+            display: block;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(20, 132, 142, 0.08);
+            color: var(--vx-ink-strong);
+            line-height: 1.7;
+            word-break: break-all;
+        }
+
+        .footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 18px 24px 24px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .actions button {
+            min-width: 128px;
+        }
+
+        @media (max-width: 720px) {
+            body {
+                padding: 16px;
+            }
+
+            .footer,
+            .actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .actions button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body class="workspace-body">
+<div class="window-shell api-shell">
+    <div class="glass-panel api-layout">
+        <section class="hero-panel">
+            <div class="hero-topline">OpenAI Config File</div>
+            <div>
+                <h1 class="hero-title">API 配置</h1>
+                <p class="hero-subtitle">编辑后端使用的 <code>openai_config.json</code>，保存时会保留未展示的其它字段。</p>
+            </div>
+        </section>
+
+        <section class="path-card">
+            <h3>配置文件路径</h3>
+            <p>路径由主进程结合路径映射提供，前端仅展示与提交字段。</p>
+            <code id="openai-config-path" class="path-chip">读取中...</code>
+        </section>
+
+        <section class="config-card">
+            <h3>Q 通道</h3>
+            <p>按当前文件结构编辑 <code>API_KEY_q / BASE_URL_q / MODEL_NAME_q</code>。</p>
+            <div class="field-grid">
+                <div class="field">
+                    <label for="api-key-q">API Key</label>
+                    <input type="text" id="api-key-q" autocomplete="off" placeholder="sk-xxxxxx">
+                </div>
+                <div class="field">
+                    <label for="base-url-q">Base URL</label>
+                    <input type="text" id="base-url-q" autocomplete="off" placeholder="https://api.openai.com/v1">
+                </div>
+                <div class="field">
+                    <label for="model-name-q">Model Name</label>
+                    <input type="text" id="model-name-q" autocomplete="off" placeholder="gpt-4o-mini">
+                </div>
+            </div>
+        </section>
+
+        <section class="config-card">
+            <h3>B 通道</h3>
+            <p>按当前文件结构编辑 <code>API_KEY_b / BASE_URL_b / MODEL_NAME_b</code>。</p>
+            <div class="field-grid">
+                <div class="field">
+                    <label for="api-key-b">API Key</label>
+                    <input type="text" id="api-key-b" autocomplete="off" placeholder="sk-xxxxxx">
+                </div>
+                <div class="field">
+                    <label for="base-url-b">Base URL</label>
+                    <input type="text" id="base-url-b" autocomplete="off" placeholder="https://api.openai.com/v1">
+                </div>
+                <div class="field">
+                    <label for="model-name-b">Model Name</label>
+                    <input type="text" id="model-name-b" autocomplete="off" placeholder="gpt-4o-mini">
+                </div>
+            </div>
+        </section>
+
+        <div class="footer">
+            <span id="status-msg" class="status-text"></span>
+            <div class="actions">
+                <button id="reload-btn" class="vx-btn secondary" type="button">重新读取</button>
+                <button id="save-btn" class="vx-btn primary" type="button">保存配置</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="../scripts/pages/openai-config.js"></script>
+</body>
+</html>

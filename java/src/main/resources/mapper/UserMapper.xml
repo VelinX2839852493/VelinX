@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- namespace 必须指向你的 Mapper 接口的全路径 -->
+<mapper namespace="com.velinx.mapper.UserMapper">
+
+    <!-- 插入动作：id 要和接口里的方法名一致 -->
+    <insert id="insertUser">
+        INSERT INTO users (username, email)
+        VALUES (#{username}, #{email})
+    </insert>
+
+    <!-- 查询动作 -->
+    <select id="findAll" resultType="com.velinx.entity.User">
+        SELECT * FROM users
+    </select>
+
+</mapper>

@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agent 工作台</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+            box-sizing: border-box;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        .workspace {
+            display: flex;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .chat-container,
+        .panel {
+            background: #252526;
+            border: 1px solid #333;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .chat-container {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 18px;
+            background: #007acc;
+            color: #fff;
+            border-radius: 10px 10px 0 0;
+            font-weight: 700;
+        }
+
+        .chat-box {
+            flex: 1;
+            min-height: 420px;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .msg {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 8px;
+            line-height: 1.5;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .msg-user {
+            align-self: flex-end;
+            background: #007acc;
+            color: #fff;
+        }
+
+        .msg-ai {
+            align-self: flex-start;
+            background: #333;
+            border: 1px solid #444;
+        }
+
+        .msg-action {
+            align-self: flex-start;
+            color: #9da3a6;
+            font-size: 12px;
+            font-family: Consolas, monospace;
+            padding: 0 8px;
+        }
+
+        .msg-system {
+            align-self: center;
+            color: #e5b567;
+            font-size: 12px;
+            background: rgba(229, 181, 103, 0.12);
+            padding: 6px 12px;
+            border-radius: 999px;
+        }
+
+        .input-area {
+            padding: 16px;
+            border-top: 1px solid #3e3e42;
+            background: #2d2d30;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #message-input {
+            flex: 1;
+            min-width: 0;
+            padding: 11px 12px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            outline: none;
+            font-size: 14px;
+        }
+
+        #message-input:focus,
+        .cfg-input:focus {
+            border-color: #007acc;
+        }
+
+        button {
+            border: none;
+            border-radius: 6px;
+            background: #007acc;
+            color: #fff;
+            padding: 10px 18px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        button:hover {
+            background: #005f9e;
+        }
+
+        .input-options {
+            margin-top: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            font-size: 12px;
+            color: #b9b9b9;
+        }
+
+        .vision-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            user-select: none;
+            cursor: pointer;
+        }
+
+        .vision-toggle input[type="checkbox"] {
+            margin: 0;
+            accent-color: #007acc;
+        }
+
+        .vision-hint {
+            color: #8d8d8d;
+        }
+
+        .dashboard {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .panel-header {
+            padding: 12px 15px;
+            background: #333;
+            border-bottom: 1px solid #444;
+            border-radius: 10px 10px 0 0;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .panel-content {
+            padding: 15px;
+            font-size: 13px;
+        }
+
+        .task-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 12px;
+            color: #ccc;
+        }
+
+        .task-icon {
+            width: 18px;
+            text-align: center;
+            font-family: Consolas, monospace;
+        }
+
+        .icon-pending {
+            color: #858585;
+        }
+
+        .icon-running {
+            color: #569cd6;
+        }
+
+        .icon-success {
+            color: #4ec9b0;
+        }
+
+        .token-bar-bg {
+            display: flex;
+            height: 18px;
+            border: 1px solid #444;
+            border-radius: 999px;
+            overflow: hidden;
+            background: #333;
+        }
+
+        .token-bar-input {
+            background: #569cd6;
+            transition: width 0.2s ease;
+        }
+
+        .token-bar-output {
+            background: #4ec9b0;
+            transition: width 0.2s ease;
+        }
+
+        .token-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            color: #999;
+            font-size: 12px;
+        }
+
+        .token-cost {
+            margin-top: 6px;
+            font-size: 12px;
+            color: #ce9178;
+            font-family: Consolas, monospace;
+        }
+
+        .cfg-row {
+            margin-bottom: 10px;
+        }
+
+        .cfg-label {
+            margin-bottom: 4px;
+            color: #999;
+            font-size: 12px;
+        }
+
+        .cfg-input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            outline: none;
+        }
+
+        .cfg-row-inline {
+            display: flex;
+            gap: 8px;
+        }
+
+        .cfg-row-inline > div {
+            flex: 1;
+        }
+
+        .btn-save {
+            width: 100%;
+            margin-top: 6px;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(3px);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            width: min(1400px, 100%);
+            height: min(85vh, 900px);
+            display: flex;
+            flex-direction: column;
+            background: #1e1e1e;
+            border: 1px solid #444;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #252526;
+            border-bottom: 1px solid #333;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 16px;
+            color: #e5b567;
+        }
+
+        .diff-container {
+            flex: 1;
+            display: flex;
+            min-height: 0;
+        }
+
+        .diff-pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .diff-pane.old-code {
+            border-right: 1px solid #333;
+        }
+
+        .diff-title {
+            padding: 8px 14px;
+            background: #2d2d30;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .diff-pane pre {
+            margin: 0;
+            padding: 14px;
+            flex: 1;
+            overflow: auto;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-family: Consolas, monospace;
+        }
+
+        .old-code pre {
+            background: rgba(244, 135, 113, 0.03);
+            color: #ce9178;
+        }
+
+        .new-code pre {
+            background: rgba(137, 209, 133, 0.03);
+            color: #b5cea8;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 15px 20px;
+            background: #252526;
+            border-top: 1px solid #333;
+        }
+
+        .btn-reject {
+            background: transparent;
+            border: 1px solid #d16969;
+            color: #d16969;
+        }
+
+        .btn-approve {
+            background: #4ec9b0;
+            color: #1e1e1e;
+        }
+
+        @media (max-width: 980px) {
+            .workspace {
+                flex-direction: column;
+            }
+
+            .input-options,
+            .token-info,
+            .cfg-row-inline {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .diff-container {
+                flex-direction: column;
+            }
+
+            .diff-pane.old-code {
+                border-right: none;
+                border-bottom: 1px solid #333;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="workspace">
+    <div class="chat-container">
+        <div class="header">
+            <span>AI Agent 工作台 (Copilot 模式)</span>
+            <span style="font-size: 12px; color: #c6f6d5;">核心引擎在线</span>
+        </div>
+        <div class="chat-box" id="chat-box">
+            <div class="msg msg-ai">系统初始化完成。读取和修改能力已启用，勾选桌面截图后可以让 Agent 看当前桌面。</div>
+        </div>
+        <div class="input-area">
+            <div class="input-row">
+                <input type="text" id="message-input" placeholder="输入需求，例如：帮我检查 UserLogin 的鉴权逻辑" onkeypress="handleEnter(event)">
+                <button onclick="sendMessage()">执行任务</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <div class="panel" style="flex: 2;">
+            <div class="panel-header">
+                <span>任务进度面板</span>
+                <span id="task-status" style="color: #858585; font-size: 12px;">待机中...</span>
+            </div>
+            <div class="panel-content">
+                <ul class="task-list" id="task-list">
+                    <div style="color: #666; font-style: italic;">// 当前没有正在执行的任务</div>
+                </ul>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">Token 统计</div>
+            <div class="panel-content" id="token-box">
+                <div class="token-bar-bg">
+                    <div class="token-bar-input" id="bar-input" style="width: 0%"></div>
+                    <div class="token-bar-output" id="bar-output" style="width: 0%"></div>
+                </div>
+                <div class="token-info">
+                    <span>输入: <span id="t-input">0</span></span>
+                    <span>输出: <span id="t-output">0</span></span>
+                    <span>总计: <span id="t-total">0</span> / <span id="t-max">100000</span></span>
+                </div>
+                <div class="token-cost">费用: <span id="t-cost">0.0000</span></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">模型配置</div>
+            <div class="panel-content">
+                <div class="cfg-row">
+                    <div class="cfg-label">API 地址</div>
+                    <input class="cfg-input" id="cfg-url" placeholder="https://...">
+                </div>
+                <div class="cfg-row">
+                    <div class="cfg-label">API 密钥</div>
+                    <input class="cfg-input" id="cfg-key" type="password" placeholder="sk-...">
+                </div>
+                <div class="cfg-row">
+                    <div class="cfg-label">模型名称</div>
+                    <input class="cfg-input" id="cfg-model" placeholder="gpt-4o">
+                </div>
+                <div class="cfg-row-inline">
+                    <div>
+                        <div class="cfg-label">最大 Token</div>
+                        <input class="cfg-input" id="cfg-max" type="number" value="100000">
+                    </div>
+                    <div>
+                        <div class="cfg-label">输入单价 / 1K</div>
+                        <input class="cfg-input" id="cfg-ip" type="number" step="0.001" value="0.0035">
+                    </div>
+                    <div>
+                        <div class="cfg-label">输出单价 / 1K</div>
+                        <input class="cfg-input" id="cfg-op" type="number" step="0.001" value="0.007">
+                    </div>
+                </div>
+                <button class="btn-save" onclick="saveConfig()">保存配置</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="review-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>AI 请求修改文件</h3>
+            <span id="review-filename" style="color: #569cd6; font-family: Consolas, monospace; font-size: 14px;"></span>
+        </div>
+        <div class="diff-container">
+            <div class="diff-pane old-code">
+                <div class="diff-title">当前内容</div>
+                <pre id="review-old-code"></pre>
+            </div>
+            <div class="diff-pane new-code">
+                <div class="diff-title">建议修改</div>
+                <pre id="review-new-code"></pre>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-reject" onclick="resolveReview(false)">拒绝修改</button>
+            <button class="btn-approve" onclick="resolveReview(true)">批准执行</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const chatBox = document.getElementById('chat-box');
+    const input = document.getElementById('message-input');
+    const taskList = document.getElementById('task-list');
+    const taskStatus = document.getElementById('task-status');
+    const reviewModal = document.getElementById('review-modal');
+    const captureDesktopToggle = mountVisionToggle();
+
+    let taskElements = [];
+    let currentStreamDiv = null;
+
+    const eventSource = new EventSource('/api/bot/stream');
+
+    eventSource.addEventListener('stream', function (event) {
+        if (!currentStreamDiv) {
+            currentStreamDiv = document.createElement('div');
+            currentStreamDiv.className = 'msg msg-ai';
+            currentStreamDiv.innerText = '';
+            chatBox.appendChild(currentStreamDiv);
+        }
+        currentStreamDiv.innerText += event.data;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    eventSource.addEventListener('message', function (event) {
+        currentStreamDiv = null;
+        if (event.data && event.data.trim()) {
+            appendMessage(event.data, 'msg-ai');
+        }
+        taskStatus.innerText = '执行完成';
+        taskStatus.style.color = '#4ec9b0';
+    });
+
+    eventSource.addEventListener('action', function (event) {
+        appendActionLog(event.data);
+    });
+
+    eventSource.addEventListener('error', function (event) {
+        if (event.data) {
+            appendSystemLog('错误: ' + event.data);
+        }
+    });
+
+    eventSource.addEventListener('task', function (event) {
+        try {
+            const cmd = JSON.parse(event.data);
+            if (cmd.type === 'init') {
+                taskStatus.innerText = '任务执行中...';
+                taskStatus.style.color = '#569cd6';
+                taskList.innerHTML = '';
+                taskElements = [];
+
+                cmd.tasks.forEach(taskName => {
+                    const li = document.createElement('li');
+                    li.className = 'task-item';
+                    li.innerHTML = `<span class="task-icon icon-pending">○</span><span class="task-text">${taskName}</span>`;
+                    taskList.appendChild(li);
+                    taskElements.push(li);
+                });
+            } else if (cmd.type === 'running') {
+                const el = taskElements[cmd.index];
+                if (el) {
+                    el.querySelector('.task-icon').className = 'task-icon icon-running';
+                    el.querySelector('.task-icon').innerText = '▶';
+                    el.style.color = '#ffffff';
+                }
+            } else if (cmd.type === 'success') {
+                const el = taskElements[cmd.index];
+                if (el) {
+                    el.querySelector('.task-icon').className = 'task-icon icon-success';
+                    el.querySelector('.task-icon').innerText = '✓';
+                    el.style.color = '#858585';
+                }
+            }
+        } catch (e) {
+            console.error('解析任务数据失败', e);
+        }
+    });
+
+    eventSource.addEventListener('review', function (event) {
+        try {
+            const data = JSON.parse(event.data);
+            document.getElementById('review-filename').innerText = data.fileName;
+            document.getElementById('review-old-code').innerText =
+                data.oldCode ? data.oldCode : '/* 当前文件不存在，将会创建新文件 */';
+            document.getElementById('review-new-code').innerText = data.newCode;
+
+            reviewModal.style.display = 'flex';
+            appendSystemLog('审核已暂停当前任务，等待你确认是否修改 ' + data.fileName);
+        } catch (e) {
+            console.error('解析审核数据失败', e);
+        }
+    });
+
+    eventSource.addEventListener('token', function (event) {
+        try {
+            const d = JSON.parse(event.data);
+            const max = parseInt(document.getElementById('cfg-max').value, 10) || 100000;
+            const inputPct = Math.min(d.inputTokens / max * 100, 100);
+            const outputPct = Math.min(d.outputTokens / max * 100, 100 - inputPct);
+
+            document.getElementById('bar-input').style.width = inputPct + '%';
+            document.getElementById('bar-output').style.width = outputPct + '%';
+            document.getElementById('t-input').innerText = d.inputTokens;
+            document.getElementById('t-output').innerText = d.outputTokens;
+            document.getElementById('t-total').innerText = d.totalTokens;
+            document.getElementById('t-max').innerText = max;
+
+            const ip = parseFloat(document.getElementById('cfg-ip').value) || 0;
+            const op = parseFloat(document.getElementById('cfg-op').value) || 0;
+            const cost = (d.inputTokens / 1000 * ip) + (d.outputTokens / 1000 * op);
+            document.getElementById('t-cost').innerText = cost.toFixed(4);
+        } catch (e) {
+            console.error('解析 Token 数据失败', e);
+        }
+    });
+
+    function mountVisionToggle() {
+        const inputArea = document.querySelector('.input-area');
+        const existingToggle = document.getElementById('capture-desktop');
+        if (!inputArea) {
+            return { checked: false };
+        }
+        if (existingToggle) {
+            return existingToggle;
+        }
+
+        const options = document.createElement('div');
+        options.className = 'input-options';
+
+        const label = document.createElement('label');
+        label.className = 'vision-toggle';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = 'capture-desktop';
+
+        const text = document.createElement('span');
+        text.innerText = '附带桌面截图';
+
+        const hint = document.createElement('span');
+        hint.className = 'vision-hint';
+        hint.innerText = '勾选后发送时会自动附带当前桌面截图。';
+
+        label.appendChild(checkbox);
+        label.appendChild(text);
+        options.appendChild(label);
+        options.appendChild(hint);
+        inputArea.appendChild(options);
+
+        return checkbox;
+    }
+
+    function sendMessage() {
+        const text = input.value.trim();
+        if (!text) {
+            return;
+        }
+
+        const captureDesktop = !!captureDesktopToggle.checked;
+
+        appendMessage(captureDesktop ? text + ' [桌面截图]' : text, 'msg-user');
+        input.value = '';
+        localStorage.setItem('bot-capture-desktop', captureDesktop ? '1' : '0');
+
+        taskStatus.innerText = '生成任务中...';
+        taskStatus.style.color = '#ce9178';
+        taskList.innerHTML = '<div style="color: #ce9178; font-style: italic;">// 正在分析需求并准备执行</div>';
+
+        fetch('/api/bot/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: text,
+                captureDesktop: captureDesktop
+            })
+        }).then(async res => {
+            if (!res.ok) {
+                const errorText = await res.text();
+                appendSystemLog('发送任务失败: ' + (errorText || res.status));
+            }
+        }).catch(err => {
+            console.error('发送任务失败', err);
+            appendSystemLog('发送任务失败，请检查网络或后端。');
+        });
+    }
+
+    function resolveReview(isApproved) {
+        reviewModal.style.display = 'none';
+
+        fetch(`/api/bot/review/resolve?approved=${isApproved}`, { method: 'POST' })
+            .then(res => {
+                if (res.ok) {
+                    appendSystemLog(isApproved
+                        ? '你已批准修改，系统继续执行。'
+                        : '你已拒绝修改，AI 会尝试其他方案。');
+                } else {
+                    console.error('审核回调失败');
+                }
+            })
+            .catch(err => console.error('发送审核结果失败', err));
+    }
+
+    function appendMessage(text, className) {
+        const div = document.createElement('div');
+        div.className = 'msg ' + className;
+        div.innerText = text;
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function appendActionLog(text) {
+        const div = document.createElement('div');
+        div.className = 'msg msg-action';
+        div.innerText = '> ' + text;
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function appendSystemLog(text) {
+        const div = document.createElement('div');
+        div.className = 'msg msg-system';
+        div.innerText = text;
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function handleEnter(event) {
+        if (event.key === 'Enter') {
+            sendMessage();
+        }
+    }
+
+    function saveConfig() {
+        const cfg = {
+            url: document.getElementById('cfg-url').value,
+            key: document.getElementById('cfg-key').value,
+            model: document.getElementById('cfg-model').value,
+            max: document.getElementById('cfg-max').value,
+            ip: document.getElementById('cfg-ip').value,
+            op: document.getElementById('cfg-op').value
+        };
+
+        localStorage.setItem('bot-config', JSON.stringify(cfg));
+
+        if (cfg.url || cfg.key || cfg.model) {
+            fetch('/api/bot/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    baseUrl: cfg.url,
+                    apiKey: cfg.key,
+                    modelName: cfg.model
+                })
+            });
+        }
+
+        appendSystemLog('配置已保存。');
+    }
+
+    function loadConfig() {
+        try {
+            const cfg = JSON.parse(localStorage.getItem('bot-config'));
+            if (cfg) {
+                document.getElementById('cfg-url').value = cfg.url || '';
+                document.getElementById('cfg-key').value = cfg.key || '';
+                document.getElementById('cfg-model').value = cfg.model || '';
+                document.getElementById('cfg-max').value = cfg.max || '100000';
+                document.getElementById('cfg-ip').value = cfg.ip || '0.0035';
+                document.getElementById('cfg-op').value = cfg.op || '0.007';
+            }
+
+            captureDesktopToggle.checked = localStorage.getItem('bot-capture-desktop') === '1';
+        } catch (e) {
+            console.error('读取本地配置失败', e);
+        }
+    }
+
+    loadConfig();
+</script>
+</body>
+</html>

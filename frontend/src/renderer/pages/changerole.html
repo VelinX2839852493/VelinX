@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: file:;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>选择角色</title>
+    <link rel="stylesheet" href="../assets/styles/ui-theme.css">
+    <style>
+        body {
+            padding: 20px;
+        }
+
+        .switch-shell {
+            max-width: 640px;
+            padding: 0;
+        }
+
+        .switch-stack {
+            display: grid;
+            gap: 18px;
+        }
+
+        .hero-panel {
+            display: grid;
+            gap: 16px;
+            padding: 26px;
+        }
+
+        .section-card {
+            padding: 22px;
+        }
+
+        .field-grid {
+            margin-top: 18px;
+        }
+
+        .field-group {
+            display: grid;
+            gap: 8px;
+        }
+
+        .file-pick {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+        }
+
+        .file-pick input[readonly] {
+            color: var(--vx-ink-soft);
+        }
+
+        .status-row {
+            min-height: 24px;
+            padding: 0 26px;
+            color: var(--vx-ink-soft);
+            line-height: 1.5;
+        }
+
+        .footer {
+            display: flex;
+            gap: 12px;
+            padding: 0 26px 26px;
+        }
+
+        .footer button {
+            flex: 1;
+        }
+
+        @media (max-width: 520px) {
+            body {
+                padding: 16px;
+            }
+
+            .file-pick,
+            .footer {
+                grid-template-columns: 1fr;
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body class="workspace-body">
+<div class="window-shell switch-shell">
+    <div class="glass-panel switch-stack">
+        <section class="hero-panel">
+            <div class="hero-topline">Role Switcher</div>
+            <div>
+                <h1 class="hero-title">选择或创建 AI 角色</h1>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-label">Preset Role</div>
+            <h2 class="section-title">使用现有角色</h2>
+            <div class="field-grid">
+                <div class="field-group">
+                    <label for="preset-select" class="field-label">预设角色</label>
+                    <select id="preset-select">
+                        <option value="">加载中...</option>
+                    </select>
+                </div>
+
+                <div class="field-group">
+                    <label for="world-book-path" class="field-label">世界书 JSON</label>
+                    <div class="file-pick">
+                        <input type="text" id="world-book-path" placeholder="未选择文件" readonly>
+                        <button class="vx-btn secondary" id="browse-world-btn" type="button">浏览</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-label">Create New</div>
+            <h2 class="section-title">创建新角色</h2>
+            <div class="field-grid">
+                <div class="field-group">
+                    <label for="new-role-name" class="field-label">新角色名称</label>
+                    <input type="text" id="new-role-name" placeholder="角色名称">
+                </div>
+
+                <div class="field-group">
+                    <label for="template-select" class="field-label">配置模板</label>
+                    <select id="template-select">
+                        <option value="">加载中...</option>
+                    </select>
+                </div>
+
+                <div class="field-group">
+                    <label for="profile-path" class="field-label">角色档案</label>
+                    <div class="file-pick">
+                        <input type="text" id="profile-path" placeholder="未选择文件" readonly>
+                        <button class="vx-btn secondary" id="browse-profile-btn" type="button">浏览</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="status-row">
+            <span id="status-msg"></span>
+        </div>
+
+        <div class="footer">
+            <button class="vx-btn primary" id="confirm-btn" type="button">启动并进入会话</button>
+            <button class="vx-btn secondary" id="cancel-btn" type="button">取消</button>
+        </div>
+    </div>
+</div>
+
+<script src="../scripts/pages/switch-character.js"></script>
+</body>
+</html>

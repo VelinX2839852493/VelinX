@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: file:;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模型与窗口设置</title>
+    <link rel="stylesheet" href="../assets/styles/ui-theme.css">
+    <style>
+        html,
+        body {
+            min-height: 100%;
+        }
+
+        body {
+            padding: 20px;
+        }
+
+        .settings-shell {
+            max-width: 640px;
+            padding: 0;
+        }
+
+        .settings-stack {
+            display: grid;
+            gap: 18px;
+        }
+
+        .hero-panel {
+            display: grid;
+            gap: 16px;
+            padding: 26px;
+        }
+
+        .settings-card {
+            padding: 22px;
+            border: 1px solid var(--vx-line-soft);
+            border-radius: var(--vx-radius-lg);
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 14px 28px rgba(24, 48, 69, 0.05);
+        }
+
+        .settings-card h2 {
+            margin: 0;
+            color: var(--vx-ink-strong);
+            font-family: var(--vx-font-display);
+            font-size: 22px;
+        }
+
+        .settings-card p {
+            margin: 10px 0 0;
+            color: var(--vx-ink-soft);
+            font-size: 13px;
+            line-height: 1.65;
+        }
+
+        .path-display {
+            margin-top: 12px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            background: rgba(248, 251, 255, 0.92);
+            border: 1px dashed rgba(24, 48, 69, 0.14);
+            color: var(--vx-ink-soft);
+            font-size: 12px;
+            line-height: 1.65;
+            word-break: break-all;
+        }
+
+        .metric-grid {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            margin-top: 18px;
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+            padding: 16px 18px;
+            border-radius: 18px;
+            background: rgba(248, 251, 255, 0.92);
+            border: 1px solid rgba(24, 48, 69, 0.08);
+        }
+
+        .toggle-row input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            min-height: 18px;
+            padding: 0;
+        }
+
+        .bg-actions {
+            display: grid;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .color-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        #bg_color {
+            width: 68px;
+            min-width: 68px;
+            min-height: 48px;
+            padding: 6px;
+        }
+
+        .footer {
+            display: flex;
+            gap: 12px;
+            padding: 0 26px 26px;
+        }
+
+        .footer button {
+            flex: 1;
+        }
+
+        @media (max-width: 520px) {
+            body {
+                padding: 16px;
+            }
+
+            .metric-grid,
+            .footer {
+                grid-template-columns: 1fr;
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body class="workspace-body">
+<div class="window-shell settings-shell">
+    <div class="glass-panel settings-stack">
+        <section class="hero-panel">
+            <div class="hero-topline">Live2D Studio</div>
+            <div>
+                <h1 class="hero-title">模型与窗口设置</h1>
+            </div>
+        </section>
+
+        <section class="settings-card">
+            <div class="section-label">Model Source</div>
+            <h2>模型目录</h2>
+            <div class="bg-actions">
+                <button id="selectModelBtn" class="vx-btn secondary" type="button">选择 Live2D 模型文件夹</button>
+                <div id="modelPathDisplay" class="path-display">当前未设置模型目录</div>
+            </div>
+        </section>
+
+        <section class="settings-card">
+            <div class="section-label">Window Metrics</div>
+            <h2>窗口尺寸</h2>
+            <div class="metric-grid">
+                <div class="field">
+                    <label for="width">窗口宽度</label>
+                    <input type="number" id="width">
+                </div>
+                <div class="field">
+                    <label for="height">窗口高度</label>
+                    <input type="number" id="height">
+                </div>
+                <div class="field">
+                    <label for="img_width">模型渲染宽度</label>
+                    <input type="number" id="img_width">
+                </div>
+                <div class="field">
+                    <label for="img_height">模型渲染高度</label>
+                    <input type="number" id="img_height">
+                </div>
+            </div>
+
+            <div class="toggle-row">
+                <input type="checkbox" id="is_mouse_penetration">
+                <label for="is_mouse_penetration" style="margin: 0;">启用鼠标穿透</label>
+            </div>
+        </section>
+
+        <section class="settings-card">
+            <div class="section-label">Background</div>
+            <h2>背景资源</h2>
+            <div class="color-row">
+                <input type="color" id="bg_color" value="#ffffff">
+                <button id="resetBgColorBtn" class="vx-btn ghost" type="button">重置为透明</button>
+            </div>
+            <div class="bg-actions">
+                <button id="selectBgImgBtn" class="vx-btn secondary" type="button">选择背景图片</button>
+                <button id="clearBgImgBtn" class="vx-btn danger" type="button">清除背景图片</button>
+                <div id="bgImgPathDisplay" class="path-display">当前未设置背景图片</div>
+            </div>
+        </section>
+
+        <section class="settings-card">
+            <div class="section-label">Debug</div>
+            <h2>调试入口</h2>
+            <div class="bg-actions">
+                <button id="debugBtn" class="vx-btn ghost" type="button">切换点击区域可视化</button>
+            </div>
+        </section>
+
+        <div class="footer">
+            <button id="saveBtn" class="vx-btn primary" type="button">保存并应用</button>
+        </div>
+    </div>
+</div>
+
+<script src="../scripts/pages/model-settings.js"></script>
+</body>
+</html>

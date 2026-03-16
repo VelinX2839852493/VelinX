@@ -1,0 +1,21 @@
+server:
+  port: 38080
+
+spring:
+  datasource:
+    url: jdbc:sqlite:velinx.db
+    driver-class-name: org.sqlite.JDBC
+
+  sql:
+    init:
+      mode: always
+
+logging:
+  level:
+    com.velinx.mapper: debug
+    org.springframework.jdbc.datasource.init: debug
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true

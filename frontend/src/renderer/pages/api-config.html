@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: file:;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>后端接入配置</title>
+    <link rel="stylesheet" href="../assets/styles/ui-theme.css">
+    <style>
+        body {
+            padding: 22px;
+        }
+
+        .api-shell {
+            max-width: 760px;
+            padding: 0;
+        }
+
+        .api-layout {
+            display: grid;
+            gap: 18px;
+        }
+
+        .hero-panel {
+            display: grid;
+            gap: 18px;
+        }
+
+        .config-card {
+            padding: 22px;
+            border: 1px solid var(--vx-line-soft);
+            border-radius: var(--vx-radius-lg);
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 14px 28px rgba(24, 48, 69, 0.05);
+        }
+
+        .config-card h3 {
+            margin: 0 0 8px;
+            color: var(--vx-ink-strong);
+            font-family: var(--vx-font-display);
+            font-size: 22px;
+        }
+
+        .config-card p {
+            margin: 0 0 18px;
+            color: var(--vx-ink-soft);
+            line-height: 1.6;
+        }
+
+        .field-grid {
+            gap: 14px;
+        }
+
+        .hint-card {
+            padding: 18px 22px;
+            border-radius: var(--vx-radius-lg);
+            background: rgba(20, 132, 142, 0.08);
+            color: var(--vx-ink-soft);
+            line-height: 1.7;
+        }
+
+        .hint-card code {
+            color: var(--vx-ink-strong);
+        }
+
+        .footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 18px 24px 24px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .actions button {
+            min-width: 128px;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 16px;
+            }
+
+            .footer,
+            .actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .actions button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body class="workspace-body">
+<div class="window-shell api-shell">
+    <div class="glass-panel api-layout">
+        <section class="hero-panel">
+            <div class="hero-topline">Backend Access</div>
+            <div>
+                <h1 class="hero-title">后端接入配置</h1>
+            </div>
+        </section>
+
+        <section class="config-card">
+            <h3>HTTP JSON 接入</h3>
+            <p>后端只要实现统一的健康检查、会话启动和聊天接口，就可以复用当前 Electron 前端。</p>
+            <div class="field-grid">
+                <div class="field">
+                    <label for="backend-mode">接入模式</label>
+                    <select id="backend-mode">
+                        <option value="http">HTTP JSON</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="backend-base-url">后端地址</label>
+                    <input type="text" id="backend-base-url" autocomplete="off" placeholder="http://127.0.0.1:38080">
+                </div>
+                <div class="field">
+                    <label for="backend-timeout">请求超时 (ms)</label>
+                    <input type="number" id="backend-timeout" min="1000" step="1000" autocomplete="off" placeholder="30000">
+                </div>
+            </div>
+        </section>
+
+        <section class="hint-card">
+            建议后端提供以下接口：
+            <br>
+            <code>GET /health</code>
+            <br>
+            <code>POST /session/start</code>
+            <br>
+            <code>POST /chat</code>
+        </section>
+
+        <div class="footer">
+            <span id="status-msg" class="status-text"></span>
+            <div class="actions">
+                <button id="test-btn" class="vx-btn secondary" type="button">测试连接</button>
+                <button id="save-btn" class="vx-btn primary" type="button">保存配置</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="../scripts/pages/api-config.js"></script>
+</body>
+</html>

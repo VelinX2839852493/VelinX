@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: file:;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件窗口</title>
+    <link rel="stylesheet" href="../../assets/styles/ui-theme.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+            background: transparent;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            font-family: var(--vx-font-body);
+            color: var(--vx-ink-strong);
+            -webkit-app-region: drag;
+        }
+
+        #background-layer {
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            background:
+                radial-gradient(circle at top left, rgba(20, 132, 142, 0.18), transparent 34%),
+                linear-gradient(180deg, rgba(232, 247, 248, 0.86) 0%, rgba(255, 255, 255, 0.72) 58%, rgba(255, 244, 231, 0.84) 100%);
+            background-size: cover;
+            background-position: center;
+            transition: background 0.2s ease, opacity 0.2s ease;
+            pointer-events: none;
+        }
+
+        #background-layer::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.14) 1px, transparent 1px);
+            background-size: 26px 26px;
+            mask-image: radial-gradient(circle at center, #000 0%, #000 68%, transparent 88%);
+        }
+
+        #drop-overlay {
+            position: fixed;
+            inset: 12px;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed rgba(20, 132, 142, 0.72);
+            border-radius: 28px;
+            background: rgba(20, 132, 142, 0.16);
+            color: #0e6a72;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.42);
+            pointer-events: none;
+        }
+
+        #drop-overlay.active {
+            display: flex;
+        }
+
+        .hud {
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            padding: 16px 16px 8px;
+            pointer-events: none;
+        }
+
+        .hud-card {
+            max-width: 220px;
+            padding: 14px 18px;
+            border-radius: 22px;
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(255, 255, 255, 0.56);
+            backdrop-filter: blur(18px);
+            box-shadow: 0 16px 34px rgba(24, 48, 69, 0.1);
+        }
+
+        .hud-topline {
+            color: var(--vx-accent-strong);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .hud-title {
+            margin-top: 6px;
+            color: var(--vx-ink-strong);
+            font-family: var(--vx-font-display);
+            font-size: 24px;
+        }
+
+        #empty-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: min(220px, calc(100vw - 36px));
+            transform: translate(-50%, -50%);
+            padding: 16px 18px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.76);
+            border: 1px solid rgba(255, 255, 255, 0.56);
+            box-shadow: 0 18px 38px rgba(24, 48, 69, 0.1);
+            color: var(--vx-ink-main);
+            text-align: center;
+            font-size: 13px;
+            line-height: 1.6;
+            backdrop-filter: blur(18px);
+            pointer-events: none;
+        }
+
+        #folder-list {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(122px, 1fr));
+            gap: 16px;
+            padding: 8px 16px 16px;
+            overflow-y: auto;
+            align-content: start;
+            -webkit-app-region: no-drag;
+        }
+
+        .folder-item {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            min-height: 126px;
+            padding: 18px 12px 14px;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(255, 255, 255, 0.54);
+            box-shadow: 0 16px 32px rgba(24, 48, 69, 0.1);
+            cursor: pointer;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+        }
+
+        .folder-item:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 22px 36px rgba(24, 48, 69, 0.14);
+        }
+
+        .folder-item::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: linear-gradient(160deg, rgba(20, 132, 142, 0.08), rgba(255, 159, 67, 0));
+            pointer-events: none;
+        }
+
+        .folder-item img {
+            width: 54px;
+            height: 54px;
+            object-fit: contain;
+            filter: drop-shadow(0 8px 12px rgba(24, 48, 69, 0.14));
+        }
+
+        .folder-item span {
+            width: 100%;
+            color: var(--vx-ink-strong);
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.5;
+            text-align: center;
+            word-break: break-word;
+        }
+    </style>
+</head>
+<body>
+<div id="background-layer"></div>
+<div id="drop-overlay">松开即可保存</div>
+
+<div class="hud">
+    <div class="hud-card">
+        <div class="hud-topline">File Shelf</div>
+        <div class="hud-title">文件窗口</div>
+    </div>
+</div>
+
+<div id="empty-hint">拖入文件夹</div>
+<div id="folder-list" class="scroll-surface"></div>
+
+<script src="../../scripts/pages/file-ui.js"></script>
+</body>
+</html>
