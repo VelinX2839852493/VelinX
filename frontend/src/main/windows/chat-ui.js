@@ -6,6 +6,7 @@ const apiConfigWindow = require('./api-config-ui');
 const openAiConfigWindow = require('./openai-config-ui');
 const switchCharWindow = require('./switch-char-ui');
 const roleConfigWindow = require('./role-config-ui');
+const developerTestWindow = require('./developer-test-ui');
 
 const CHAT_HTML_PATH = path.join(__dirname, '../../renderer/pages/chat.html');
 const PRELOAD_PATH = path.join(__dirname, '../../preload/index.js');
@@ -34,6 +35,9 @@ function openChildWindow(type) {
             break;
         case 'heart':
             roleConfigWindow.create(chatWin);
+            break;
+        case 'developer-test':
+            developerTestWindow.create(chatWin);
             break;
         default:
             console.log('Unknown chat sub window:', type);

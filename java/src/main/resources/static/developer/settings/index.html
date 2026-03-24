@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VelinX Backend Settings</title>
+    <link rel="stylesheet" href="/developer/assets/shared.css">
+</head>
+<body>
+<div class="page-shell section-stack">
+    <div class="page-topbar">
+        <div>
+            <h1 class="page-title">后端设置</h1>
+            <p class="page-subtitle">这里只保留本次测试页真正需要的后端配置模块。保存后会直接作用到当前后端运行时。</p>
+        </div>
+        <div class="topbar-actions">
+            <a href="/developer/startup-test"><button class="secondary">返回测试页</button></a>
+        </div>
+    </div>
+
+    <div class="card-grid two">
+        <a class="nav-card panel" href="/developer/settings/model">
+            <div class="panel-body">
+                <h3>模型 / API 配置</h3>
+                <p>编辑 <span class="inline-code">baseUrl</span>、<span class="inline-code">apiKey</span>、<span class="inline-code">modelName</span>，并在保存后立即重建 Bot 运行时。</p>
+                <div class="card-link">进入模型配置页</div>
+            </div>
+        </a>
+        <a class="nav-card panel" href="/developer/settings/tts">
+            <div class="panel-body">
+                <h3>TTS 配置</h3>
+                <p>编辑 <span class="inline-code">apiUri</span>、<span class="inline-code">apiKey</span>、<span class="inline-code">model</span>、<span class="inline-code">voice</span>，保存后立即重建 TTS 客户端并支持冒烟测试。</p>
+                <div class="card-link">进入 TTS 配置页</div>
+            </div>
+        </a>
+    </div>
+</div>
+</body>
+</html>

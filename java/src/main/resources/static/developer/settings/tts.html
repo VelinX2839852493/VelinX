@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VelinX TTS Settings</title>
+    <link rel="stylesheet" href="/developer/assets/shared.css">
+</head>
+<body>
+<div class="page-shell section-stack">
+    <div class="page-topbar">
+        <div>
+            <h1 class="page-title">TTS 配置</h1>
+            <p class="page-subtitle">这一页专门调语音。上半部分做 TTS 测试，下半部分保存 TTS 配置并立即生效。</p>
+        </div>
+        <div class="topbar-actions">
+            <a href="/developer/settings">
+                <button class="secondary">返回设置页</button>
+            </a>
+            <a href="/developer/startup-test">
+                <button>返回主页</button>
+            </a>
+        </div>
+    </div>
+
+    <div id="page-banner" class="banner"></div>
+
+    <section class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">语音测试</h2>
+            <span class="soft">复用 /api/bot/debug/tts</span>
+        </div>
+        <div class="panel-body form-grid">
+            <label class="field">
+                <span class="field-label">测试文本</span>
+                <textarea id="tts-text" class="text-area">VelinX backend TTS smoke test.</textarea>
+            </label>
+            <div class="actions-row">
+                <button class="success" id="run-test">执行语音测试</button>
+            </div>
+            <div class="output-box">
+                <div class="output-label">最近结果</div>
+                <div class="output-value empty-state" id="tts-output">执行测试后，这里会显示最近一次成功或失败结果。</div>
+            </div>
+            <div class="log-panel">
+                <div class="log-list" id="tts-log"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">TTS 配置</h2>
+            <button class="secondary" id="reload-config">重新加载</button>
+        </div>
+        <div class="panel-body form-grid">
+            <label class="field">
+                <span class="field-label">API URI</span>
+                <input id="api-uri" class="text-input" type="text" placeholder="https://...">
+            </label>
+            <label class="field">
+                <span class="field-label">API Key</span>
+                <input id="api-key" class="text-input" type="password" placeholder="sk-...">
+            </label>
+            <div class="field two">
+                <label class="field">
+                    <span class="field-label">Model</span>
+                    <input id="model-name" class="text-input" type="text" placeholder="fnlp/MOSS-TTSD-v0.5">
+                </label>
+                <label class="field">
+                    <span class="field-label">Voice</span>
+                    <input id="voice-name" class="text-input" type="text" placeholder="claire">
+                </label>
+            </div>
+            <div class="actions-row">
+                <button id="save-tts">保存配置</button>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script src="/developer/assets/debug-common.js"></script>
+<script>
+    const banner = document.getElementById("page-banner");
+    const ttsOutput = document.getElementById("tts-output");
+    const ttsLog = document.getElementById("tts-log");
+
+    async function loadConfig(showSuccessBanner = false) {
+        try {
+            const config = await DebugApi.getConfig();
+            document.getElementById("api-uri").value = config.tts.apiUri || "";
+            document.getElementById("api-key").value = config.tts.apiKey || "";
+            document.getElementById("model-name").value = config.tts.model || "";
+            document.getElementById("voice-name").value = config.tts.voice || "";
+            if (showSuccessBanner) {
+                DebugUi.showBanner(banner, "ok", "TTS 配置已重新加载。");
+            }
+        } catch (error) {
+            DebugUi.showBanner(banner, "error", `加载 TTS 配置失败：${error.message}`);
+        }
+    }
+
+    function currentPayload() {
+        return {
+            apiUri: document.getElementById("api-uri").value,
+            apiKey: document.getElementById("api-key").value,
+            model: document.getElementById("model-name").value,
+            voice: document.getElementById("voice-name").value
+        };
+    }
+
+    async function saveTtsConfig() {
+        await DebugApi.saveTtsConfig(currentPayload());
+    }
+
+    async function runSmokeTest() {
+        return DebugApi.testTts(document.getElementById("tts-text").value);
+    }
+
+    async function handleSaveOnly() {
+        try {
+            await saveTtsConfig();
+            DebugUi.showBanner(banner, "ok", "TTS 配置已保存并生效。");
+        } catch (error) {
+            DebugUi.showBanner(banner, "error", `保存失败：${error.message}`);
+        }
+    }
+
+    async function handleTestOnly() {
+        try {
+            const result = await runSmokeTest();
+            const summary = DebugUi.summarizeTtsEvent(result);
+            ttsOutput.classList.remove("empty-state");
+            ttsOutput.textContent = summary;
+            DebugUi.appendLog(ttsLog, "语音测试结果", summary, result.success ? "ok" : "error");
+            DebugUi.showBanner(
+                banner,
+                result.success ? "ok" : "error",
+                result.success ? `TTS 测试通过，耗时 ${DebugUi.formatDuration(result.durationMs)}。` : `TTS 测试失败：${result.error}`
+            );
+        } catch (error) {
+            ttsOutput.classList.remove("empty-state");
+            ttsOutput.textContent = error.message;
+            DebugUi.showBanner(banner, "error", `TTS 测试请求失败：${error.message}`);
+        }
+    }
+
+    document.getElementById("reload-config").addEventListener("click", () => loadConfig(true));
+    document.getElementById("save-tts").addEventListener("click", handleSaveOnly);
+    document.getElementById("run-test").addEventListener("click", handleTestOnly);
+    loadConfig(false);
+</script>
+</body>
+</html>

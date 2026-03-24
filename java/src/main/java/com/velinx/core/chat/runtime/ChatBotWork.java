@@ -32,9 +32,21 @@ public class ChatBotWork {
 
     private static final Logger logger = LoggerFactory.getLogger(ChatBotWork.class);
     private static final int MAX_SEQUENTIAL_TOOL_EXECUTIONS = 100;
+    private static final String EMPTY_RESPONSE_ERROR = "执行失败: 模型返回空白回复。";
 
     public interface UserInputProvider {
         String takeInput() throws InterruptedException;
+    }
+
+    public record TurnExecutionResult(boolean success, String finalText, String errorMessage) {
+
+        public static TurnExecutionResult success(String finalText) {
+            return new TurnExecutionResult(true, finalText == null ? "" : finalText, null);
+        }
+
+        public static TurnExecutionResult failure(String errorMessage) {
+            return new TurnExecutionResult(false, "", errorMessage == null ? "Execution failed." : errorMessage);
+        }
     }
 
     private final ChatAgent chatAgent;
@@ -65,19 +77,25 @@ public class ChatBotWork {
         this.toolExecutors = buildToolExecutors(toolbox);
     }
 
-    public String executeFlow(String userInput, String aiProfile, String userProfile, String generalPrompt) {
+    public TurnExecutionResult executeFlow(String userInput, String aiProfile, String userProfile, String generalPrompt) {
         try {
             String response = chatAgent.chat(userInput, aiProfile, userProfile, generalPrompt);
-            sendResponse(response);
-            return response;
+            TurnExecutionResult result = toTurnExecutionResult(response);
+            if (result.success()) {
+                sendResponse(result.finalText());
+            } else {
+                sendError(result.errorMessage());
+            }
+            return result;
         } catch (Exception e) {
             logger.error("[SYSTEM] Chat failed", e);
-            sendError("执行失败: " + e.getMessage());
-            return "";
+            String errorMessage = "执行失败: " + e.getMessage();
+            sendError(errorMessage);
+            return TurnExecutionResult.failure(errorMessage);
         }
     }
 
-    public String executeVisionFlow(String userInput, String aiProfile, String userProfile, String generalPrompt) {
+    public TurnExecutionResult executeVisionFlow(String userInput, String aiProfile, String userProfile, String generalPrompt) {
         try {
             sendActionMsg("正在截取桌面截图");
             DesktopScreenshot screenshot = desktopCaptureService.captureDesktop();
@@ -92,17 +110,22 @@ public class ChatBotWork {
                     )
             );
 
-            String response = executeManualFlow(
+            TurnExecutionResult result = executeManualFlow(
                     SystemMessage.from(buildSystemPrompt(aiProfile, userProfile, generalPrompt)),
                     UserMessage.from(userInput),
                     runtimeUserMessage
             );
-            sendResponse(response);
-            return response;
+            if (result.success()) {
+                sendResponse(result.finalText());
+            } else {
+                sendError(result.errorMessage());
+            }
+            return result;
         } catch (Exception e) {
             logger.error("[SYSTEM] Vision chat failed", e);
-            sendError(buildVisionErrorMessage(e));
-            return "";
+            String errorMessage = buildVisionErrorMessage(e);
+            sendError(errorMessage);
+            return TurnExecutionResult.failure(errorMessage);
         }
     }
 
@@ -128,9 +151,9 @@ public class ChatBotWork {
         return executors;
     }
 
-    private String executeManualFlow(SystemMessage systemMessage,
-                                     UserMessage historyUserMessage,
-                                     UserMessage runtimeUserMessage) {
+    private TurnExecutionResult executeManualFlow(SystemMessage systemMessage,
+                                                  UserMessage historyUserMessage,
+                                                  UserMessage runtimeUserMessage) {
         memoryManager.add(systemMessage);
         memoryManager.add(historyUserMessage);
 
@@ -149,7 +172,7 @@ public class ChatBotWork {
             messages.add(aiMessage);
 
             if (!aiMessage.hasToolExecutionRequests()) {
-                return aiMessage.text() == null ? "" : aiMessage.text();
+                return toTurnExecutionResult(aiMessage.text());
             }
 
             for (ToolExecutionRequest toolRequest : aiMessage.toolExecutionRequests()) {
@@ -222,6 +245,13 @@ public class ChatBotWork {
         if (listener != null) {
             listener.onError(text);
         }
+    }
+
+    private TurnExecutionResult toTurnExecutionResult(String responseText) {
+        if (responseText == null || responseText.isBlank()) {
+            return TurnExecutionResult.failure(EMPTY_RESPONSE_ERROR);
+        }
+        return TurnExecutionResult.success(responseText);
     }
 
     private String buildVisionErrorMessage(Exception e) {

@@ -1,5 +1,3 @@
-// 负责把 Electron 里的指令，通过 HTTP 网络协议真正地发送给正在运行的 Java 后端。
-
 const http = require('http');
 const https = require('https');
 const {URL} = require('url');
@@ -143,9 +141,20 @@ class HttpBackendClient extends BackendClient {
             ...(tts ? {tts: true} : {}),
         });
     }
-    /**
-     * @private 核心请求发送器
-     */
+
+    //测试信号请求
+    async sendHeartbeat(message) {
+        return this._request('POST', 'heartbeat', {
+            message: typeof message === 'string' ? message : String(message || ''),
+        });
+    }
+
+    async sendDeveloperStartupTest(payload = {}) {
+        return this._request('POST', 'developer/startup-test', {
+            message: typeof payload.message === 'string' ? payload.message : String(payload.message || ''),
+        });
+    }
+
     _request(method, pathName, payload) {
         const targetUrl = buildTargetUrl(this.config.baseUrl, pathName);
         const transport = targetUrl.protocol === 'https:' ? https : http;

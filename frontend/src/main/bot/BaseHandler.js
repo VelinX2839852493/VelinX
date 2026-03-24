@@ -48,6 +48,18 @@ function normalizeChatPayload(payload) {
     };
 }
 
+function normalizeDeveloperTestPayload(payload) {
+    if (!payload || typeof payload !== 'object') {
+        return {
+            message: '',
+        };
+    }
+
+    return {
+        message: typeof payload.message === 'string' ? payload.message : String(payload.message || ''),
+    };
+}
+
 function sleep(ms) {
     return new Promise((resolve) => {
         setTimeout(resolve, ms);
@@ -93,6 +105,9 @@ class BaseHandler {
         this.backendStartPromise = null;
         this.backendStartConfigKey = null;
         this.backendLastError = null;
+        this.defaultBackendClient = null;
+        this.defaultBackendClientConfigKey = null;
+        this.heartbeatEnabled = false;
 
         this.heartbeat = new HeartbeatManager({
             enabled: false,
@@ -123,6 +138,42 @@ class BaseHandler {
         });
 
 
+    }
+
+    //测试信号
+    async runDeveloperStartupTest(payload = {}) {
+        const request = normalizeDeveloperTestPayload(payload);
+        const backendReady = await this.ensureBackendRunning();
+
+        if (!backendReady.success) {
+            return {
+                success: false,
+                error: backendReady.error || 'Failed to start the local Java backend.',
+                code: backendReady.code || 'BACKEND_START_FAILED',
+            };
+        }
+
+        try {
+            const result = await this.createClient().sendDeveloperStartupTest(request);
+            if (!result.success) {
+                return {
+                    success: false,
+                    error: result.error || 'Failed to start the developer startup test.',
+                    code: result.code || 'DEVELOPER_TEST_FAILED',
+                };
+            }
+
+            return {
+                success: true,
+                data: result.data || {},
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message,
+                code: 'DEVELOPER_TEST_FAILED',
+            };
+        }
     }
 
     // ==========================================
@@ -235,6 +286,7 @@ class BaseHandler {
      * 彻底停止会话并关闭 Java 后端进程
      */
     async stop() {
+        this.stopBackendHeartbeat(true);
 
         // 1. 立即拦截所有新的业务请求
         // 防止在关闭过程中还有新的消息发往后端导致报错
@@ -306,6 +358,69 @@ class BaseHandler {
 
     getBotName() {
         return this.currentAiName;
+    }
+
+    isHeartbeatEnabled() {
+        return this.heartbeatEnabled;
+    }
+
+    setHeartbeatEnabled(enabled) {
+        const nextEnabled = !!enabled;
+        this.heartbeatEnabled = nextEnabled;
+
+        if (!nextEnabled) {
+            this.stopBackendHeartbeat();
+            return {
+                success: true,
+                enabled: false,
+            };
+        }
+
+        try {
+            const client = this.getDefaultBackendClient();
+            client.startHeartbeat();
+
+            return {
+                success: true,
+                enabled: true,
+            };
+        } catch (error) {
+            this.heartbeatEnabled = false;
+            return {
+                success: false,
+                error: error.message,
+                code: 'HEARTBEAT_SETUP_FAILED',
+            };
+        }
+    }
+
+    refreshBackendClient() {
+        const backendConfig = this.getBackendConfig();
+        const nextClient = this.buildBackendClient(backendConfig);
+        const shouldRestartHeartbeat = this.heartbeatEnabled;
+
+        if (this.defaultBackendClient) {
+            this.defaultBackendClient.stopHeartbeat();
+        }
+
+        this.defaultBackendClient = nextClient;
+        this.defaultBackendClientConfigKey = getBackendConfigKey(backendConfig);
+
+        if (shouldRestartHeartbeat) {
+            this.defaultBackendClient.startHeartbeat();
+        }
+
+        return this.defaultBackendClient;
+    }
+
+    stopBackendHeartbeat(disable = false) {
+        if (disable) {
+            this.heartbeatEnabled = false;
+        }
+
+        if (this.defaultBackendClient) {
+            this.defaultBackendClient.stopHeartbeat();
+        }
     }
 
     // ==========================心跳机制======================
@@ -608,7 +723,7 @@ class BaseHandler {
 
     async requestHealth(backendConfig) {
         try {
-            return await new HttpBackendClient(backendConfig).health();
+            return await this.buildBackendClient(backendConfig).health();
         } catch (error) {
             return {
                 success: false,
@@ -631,6 +746,25 @@ class BaseHandler {
         });
     }
 
+    buildBackendClient(backendConfig) {
+        if (backendConfig.mode !== 'http') {
+            throw new Error(`Unsupported backend mode: ${backendConfig.mode}`);
+        }
+
+        return new HttpBackendClient(backendConfig);
+    }
+
+    getDefaultBackendClient() {
+        const backendConfig = this.getBackendConfig();
+        const configKey = getBackendConfigKey(backendConfig);
+
+        if (!this.defaultBackendClient || this.defaultBackendClientConfigKey !== configKey) {
+            this.refreshBackendClient();
+        }
+
+        return this.defaultBackendClient;
+    }
+
     createClient(overrideConfig = null) {
         // 1. 【确定配置参数】
         // 调用 getBackendConfig 获取最终的后端地址、端口、超时时间等配置。
@@ -650,6 +784,16 @@ class BaseHandler {
         // 这个实例就像是一个封装好的“电话机”，里面存好了 Java 后端的 IP 和端口。
         // 以后你只需要调用 client.sendChat()，它就会自动帮你发 HTTP 请求。
         return new HttpBackendClient(backendConfig);
+    }
+
+    createClient(overrideConfig = null) {
+        const backendConfig = this.getBackendConfig(overrideConfig);
+
+        if (overrideConfig) {
+            return this.buildBackendClient(backendConfig);
+        }
+
+        return this.getDefaultBackendClient();
     }
 
     async health(overrideConfig = null) {
@@ -700,11 +844,15 @@ class BaseHandler {
     }
 
     destroy() {
+        this.stopBackendHeartbeat(true);
         this.sessionActive = false;
+        this.defaultBackendClient = null;
+        this.defaultBackendClientConfigKey = null;
         void this.stopManagedBackendProcess();
     }
 
     async shutdownForAppQuit() {
+        this.stopBackendHeartbeat(true);
         const backendConfig = this.getBackendConfig();
         const shouldNotifyBackend = isManagedLocalBackend(backendConfig);
 

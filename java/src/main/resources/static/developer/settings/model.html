@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VelinX Model Settings</title>
+    <link rel="stylesheet" href="/developer/assets/shared.css">
+</head>
+<body>
+<div class="page-shell section-stack">
+    <div class="page-topbar">
+        <div>
+            <h1 class="page-title">模型配置</h1>
+            <p class="page-subtitle">这一页专门调对话。上半部分做 Bot 测试，下半部分保存模型配置并立即生效。</p>
+        </div>
+        <div class="topbar-actions">
+            <a href="/developer/settings"><button class="secondary">返回设置页</button></a>
+            <a href="/developer/startup-test"><button>返回主页</button></a>
+        </div>
+    </div>
+
+    <div id="page-banner" class="banner"></div>
+
+    <section class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">对话测试</h2>
+            <span class="soft">复用 /api/bot/send + /api/bot/stream</span>
+        </div>
+        <div class="panel-body form-grid">
+            <label class="field">
+                <span class="field-label">测试消息</span>
+                <textarea id="chat-message" class="text-area">请用一句话回复：当前后端 Bot 通路正常。</textarea>
+            </label>
+            <div class="actions-row">
+                <button id="send-chat">发送对话测试</button>
+            </div>
+            <div class="output-box">
+                <div class="output-label">当前回复</div>
+                <div class="output-value empty-state" id="chat-output">发送测试后，这里会显示流式输出与最终回复。</div>
+            </div>
+            <div class="log-panel">
+                <div class="log-list" id="chat-log"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">模型配置</h2>
+            <button class="secondary" id="reload-config">重新加载</button>
+        </div>
+        <div class="panel-body form-grid">
+            <label class="field">
+                <span class="field-label">Base URL</span>
+                <input id="base-url" class="text-input" type="text" placeholder="https://...">
+            </label>
+            <label class="field">
+                <span class="field-label">API Key</span>
+                <input id="api-key" class="text-input" type="password" placeholder="sk-...">
+            </label>
+            <label class="field">
+                <span class="field-label">Model Name</span>
+                <input id="model-name" class="text-input" type="text" placeholder="gpt-4o-mini">
+            </label>
+            <div class="actions-row">
+                <button id="save-model">保存配置</button>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script src="/developer/assets/debug-common.js"></script>
+<script>
+    const banner = document.getElementById("page-banner");
+    const chatOutput = document.getElementById("chat-output");
+    const chatLog = document.getElementById("chat-log");
+
+    let currentStream = "";
+
+    async function loadConfig(showSuccessBanner = false) {
+        try {
+            const config = await DebugApi.getConfig();
+            document.getElementById("base-url").value = config.model.baseUrl || "";
+            document.getElementById("api-key").value = config.model.apiKey || "";
+            document.getElementById("model-name").value = config.model.modelName || "";
+
+            if (showSuccessBanner) {
+                DebugUi.showBanner(banner, "ok", "模型配置已重新加载。");
+            }
+        } catch (error) {
+            DebugUi.showBanner(banner, "error", `加载模型配置失败：${error.message}`);
+        }
+    }
+
+    async function saveConfig() {
+        try {
+            await DebugApi.saveModelConfig({
+                baseUrl: document.getElementById("base-url").value,
+                apiKey: document.getElementById("api-key").value,
+                modelName: document.getElementById("model-name").value
+            });
+            DebugUi.showBanner(banner, "ok", "模型配置已保存并生效。");
+        } catch (error) {
+            DebugUi.showBanner(banner, "error", `保存失败：${error.message}`);
+        }
+    }
+
+    function connectStream() {
+        const source = new EventSource("/api/bot/stream");
+
+        source.addEventListener("stream", (event) => {
+            currentStream += event.data;
+            chatOutput.classList.remove("empty-state");
+            chatOutput.textContent = currentStream;
+        });
+
+        source.addEventListener("message", (event) => {
+            const finalText = event.data || currentStream || "无内容";
+            currentStream = "";
+            chatOutput.classList.remove("empty-state");
+            chatOutput.textContent = finalText;
+            DebugUi.appendLog(chatLog, "Bot 最终回复", finalText, "ok");
+        });
+
+        source.addEventListener("error", (event) => {
+            const detail = event.data || "连接异常或后端返回错误。";
+            chatOutput.classList.remove("empty-state");
+            chatOutput.textContent = detail;
+            DebugUi.appendLog(chatLog, "Bot 错误", detail, "error");
+        });
+    }
+
+    async function sendChatTest() {
+        const text = document.getElementById("chat-message").value.trim();
+        if (!text) {
+            DebugUi.showBanner(banner, "warn", "请输入测试消息。");
+            return;
+        }
+
+        currentStream = "";
+        chatOutput.classList.remove("empty-state");
+        chatOutput.textContent = "等待后端返回流式结果...";
+
+        try {
+            await DebugApi.sendBot({
+                message: text,
+                captureDesktop: false,
+                tts: false
+            });
+            DebugUi.showBanner(banner, "ok", "对话测试请求已发送，等待 SSE 返回。");
+            DebugUi.appendLog(chatLog, "测试请求已发送", text, "warn");
+        } catch (error) {
+            chatOutput.classList.remove("empty-state");
+            chatOutput.textContent = error.message;
+            DebugUi.showBanner(banner, "error", `发送失败：${error.message}`);
+        }
+    }
+
+    document.getElementById("reload-config").addEventListener("click", () => loadConfig(true));
+    document.getElementById("save-model").addEventListener("click", saveConfig);
+    document.getElementById("send-chat").addEventListener("click", sendChatTest);
+
+    connectStream();
+    loadConfig(false);
+</script>
+</body>
+</html>

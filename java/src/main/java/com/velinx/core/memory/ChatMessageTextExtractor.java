@@ -5,6 +5,7 @@ import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.TextContent;
+import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.data.message.UserMessage;
 
 import java.util.stream.Collectors;
@@ -20,6 +21,9 @@ public final class ChatMessageTextExtractor {
         }
         if (message instanceof AiMessage aiMessage) {
             return aiMessage.text() == null ? "" : aiMessage.text();
+        }
+        if (message instanceof ToolExecutionResultMessage toolExecutionResultMessage) {
+            return toolExecutionResultMessage.text();
         }
         if (message instanceof SystemMessage systemMessage) {
             return systemMessage.text();
@@ -47,6 +51,12 @@ public final class ChatMessageTextExtractor {
         if (message instanceof UserMessage userMessage) {
             return sanitizeForHistory(userMessage);
         }
+        if (message instanceof AiMessage aiMessage) {
+            return sanitizeForHistory(aiMessage);
+        }
+        if (message instanceof ToolExecutionResultMessage) {
+            return null;
+        }
         return message;
     }
 
@@ -60,5 +70,17 @@ public final class ChatMessageTextExtractor {
             return null;
         }
         return UserMessage.from(text);
+    }
+
+    public static AiMessage sanitizeForHistory(AiMessage aiMessage) {
+        if (aiMessage.hasToolExecutionRequests()) {
+            return null;
+        }
+
+        String text = aiMessage.text();
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+        return aiMessage;
     }
 }

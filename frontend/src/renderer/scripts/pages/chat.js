@@ -29,11 +29,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleBtn = document.getElementById('togglePanelBtn');
     const sidePanel = document.getElementById('side-panel');
     const clearBtn = document.getElementById('clearBtn');
+    const developerTestBtn = document.getElementById('developerTestBtn');
     const modalOverlay = document.getElementById('modal-overlay');
     const cancelClear = document.getElementById('cancelClear');
     const confirmClear = document.getElementById('confirmClear');
 
-    if (!api || !sendBtn || !input || !multimodalToggle || !tts || !container || !toggleBtn || !sidePanel || !clearBtn) {
+    if (!api || !sendBtn || !input || !multimodalToggle || !tts || !container || !toggleBtn || !sidePanel || !clearBtn || !developerTestBtn) {
         return;
     }
 
@@ -85,6 +86,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     clearBtn.addEventListener('click', () => {
         modalOverlay.style.display = 'flex';
+    });
+
+    developerTestBtn.addEventListener('click', () => {
+        api.openWindow('developer-test');
     });
 
     cancelClear.addEventListener('click', () => {

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: file:;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>开发者测试</title>
+    <link rel="stylesheet" href="../assets/styles/ui-theme.css">
+    <style>
+        body {
+            padding: 22px;
+        }
+
+        .devtest-shell {
+            max-width: 760px;
+            padding: 0;
+        }
+
+        .devtest-layout,
+        .hero-panel,
+        .field-grid {
+            display: grid;
+            gap: 18px;
+        }
+
+        .config-card,
+        .hint-card {
+            padding: 22px;
+            border: 1px solid var(--vx-line-soft);
+            border-radius: var(--vx-radius-lg);
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 14px 28px rgba(24, 48, 69, 0.05);
+        }
+
+        .config-card h3,
+        .hint-card h3 {
+            margin: 0 0 8px;
+            color: var(--vx-ink-strong);
+            font-family: var(--vx-font-display);
+            font-size: 22px;
+        }
+
+        .config-card p,
+        .hint-card p {
+            margin: 0 0 14px;
+            color: var(--vx-ink-soft);
+            line-height: 1.6;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 160px;
+            resize: vertical;
+        }
+
+        .status-card {
+            padding: 16px 18px;
+            border-radius: 16px;
+            background: rgba(20, 132, 142, 0.08);
+            color: var(--vx-ink-soft);
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 18px 24px 24px;
+        }
+
+        .footer button {
+            min-width: 148px;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 16px;
+            }
+
+            .footer {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .footer button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body class="workspace-body">
+<div class="window-shell devtest-shell">
+    <div class="glass-panel devtest-layout">
+        <section class="hero-panel">
+            <div class="hero-topline">Developer Tools</div>
+            <div>
+                <h1 class="hero-title">开发者测试</h1>
+                <p class="hero-subtitle">一键拉起后端 index 并发送一条测试消息到 Java 后端工作流。</p>
+            </div>
+        </section>
+
+        <section class="config-card">
+            <h3>启动测试消息</h3>
+            <p>点击“启动测试”后，Electron 会先确保后端启动，再请求后端打开 <code>http://localhost:38080</code>，随后将这里的消息投递给后端。</p>
+            <div class="field-grid">
+                <div class="field">
+                    <label for="developer-test-message">测试消息</label>
+                    <textarea id="developer-test-message">开发者测试：请回复 index 已启动</textarea>
+                </div>
+            </div>
+        </section>
+
+        <section class="hint-card">
+            <h3>状态</h3>
+            <div id="developer-test-status" class="status-card">等待启动测试。</div>
+        </section>
+
+        <div class="footer">
+            <span class="status-text">默认不附带截图，也不启用 TTS。</span>
+            <button id="developer-test-run" class="vx-btn primary" type="button">启动测试</button>
+        </div>
+    </div>
+</div>
+
+<script src="../scripts/pages/developer-test.js"></script>
+</body>
+</html>

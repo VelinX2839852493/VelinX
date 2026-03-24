@@ -186,11 +186,18 @@ function getIsAlwaysOnTop() {
     return isAlwaysOnTop;
 }
 
+function sendAvatarSignal(signal) {
+    if (!win || win.isDestroyed()) return false;
+    win.webContents.send('avatar-signal', signal);
+    return true;
+}
+
 module.exports = {
     create,
     get,
     setupGlobalMouseTracking,
     stopGlobalMouseTracking,
     setTopMost,
-    getIsAlwaysOnTop
+    getIsAlwaysOnTop,
+    sendAvatarSignal
 };

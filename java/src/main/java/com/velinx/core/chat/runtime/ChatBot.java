@@ -9,6 +9,7 @@ import com.velinx.core.memory.profile.Profile;
 import com.velinx.core.skill.SkillFactory;
 import com.velinx.core.skill.SkillManager;
 import com.velinx.core.platform.config.ConfigManager;
+import com.velinx.core.platform.config.ModelConfigNormalizer;
 import com.velinx.core.platform.observability.ChatBotTokenTracker;
 import com.velinx.core.tool.ToolBoxConfig;
 import com.velinx.core.tool.ToolManager;
@@ -103,7 +104,7 @@ public class ChatBot {
         profile = new Profile(name, fallbackModel, config);
         refreshProfiles();
 
-        memoryManager = MemoryFactory.create(profile, name, config, fallbackModel,memoryFeatures);
+        memoryManager = MemoryFactory.create(profile, name, config, fallbackModel, memoryFeatures);
         Consumer<String> actionCallback = actionMessage -> {
             if (listener != null) {
                 listener.onAction(actionMessage);
@@ -159,18 +160,28 @@ public class ChatBot {
                         + "\n\n"
                         + toolbox.getToolboxPrompt();
 
-                String aiResponse = request.captureDesktop()
+                ChatBotWork.TurnExecutionResult turnResult = request.captureDesktop()
                         ? chatBotWork.executeVisionFlow(userInput, aiProfile, userProfile, generalPrompt)
                         : chatBotWork.executeFlow(userInput, aiProfile, userProfile, generalPrompt);
 
-                memoryManager.afterTurn(userInput, aiResponse, fallbackModel);
+                if (turnResult.success()) {
+                    memoryManager.commitTurn();
+                    memoryManager.afterTurn(userInput, turnResult.finalText(), fallbackModel);
+                } else {
+                    memoryManager.abortTurn();
+                }
 
             } catch (InterruptedException e) {
                 logger.warn("ChatBot worker interrupted");
+                memoryManager.abortTurn();
                 Thread.currentThread().interrupt();
                 break;
             } catch (Exception e) {
                 logger.error("Chat flow failed", e);
+                memoryManager.abortTurn();
+                if (listener != null) {
+                    listener.onError("执行失败: " + e.getMessage());
+                }
             }
         }
 
@@ -178,9 +189,11 @@ public class ChatBot {
     }
 
     private void initApi(ChatBotTokenTracker tokenTracker) {
+        String normalizedBaseUrl = ModelConfigNormalizer.normalizeBaseUrl(config.get_openai("BASE_URL_b"));
+
         chatModel = OpenAiChatModel.builder()
                 .apiKey(config.get_openai("API_KEY_b"))
-                .baseUrl(config.get_openai("BASE_URL_b"))
+                .baseUrl(normalizedBaseUrl)
                 .modelName(config.get_openai("MODEL_NAME_b"))
                 .temperature(0.5)
                 .maxTokens(4096)
@@ -192,7 +205,7 @@ public class ChatBot {
 
         fallbackModel = OpenAiChatModel.builder()
                 .apiKey(config.get_openai("API_KEY_b"))
-                .baseUrl(config.get_openai("BASE_URL_b"))
+                .baseUrl(normalizedBaseUrl)
                 .modelName(config.get_openai("MODEL_NAME_b"))
                 .temperature(0.5)
                 .maxTokens(4096)

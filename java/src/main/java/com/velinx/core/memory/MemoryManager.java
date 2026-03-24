@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -42,10 +43,12 @@ public class MemoryManager implements ChatMemory {
 
     private List<String> tempRetrievedFacts = new ArrayList<>();
     private List<String> tempRetrievedKnowledge = new ArrayList<>();
+    private List<ChatMessage> inFlightMessages = new ArrayList<>();
     private final List<CompletedTurn> pendingTurns = new ArrayList<>();
 
     private boolean workerScheduled = false;
     private final boolean acceptingAsyncTurns = true;
+    private boolean turnActive = false;
     private long nextTurnId = 0;
 
     public MemoryManager(MemoryFeatures memoryFeatures,
@@ -91,10 +94,17 @@ public class MemoryManager implements ChatMemory {
         synchronized (stateLock) {
             tempRetrievedFacts = new ArrayList<>(facts);
             tempRetrievedKnowledge = new ArrayList<>(kb);
+            inFlightMessages = new ArrayList<>();
+            turnActive = true;
         }
     }
 
     public void afterTurn(String userInput, String aiResponse, ChatLanguageModel model) {
+        if (aiResponse == null || aiResponse.isBlank()) {
+            logger.debug("Skipping async memory write because the AI response is blank");
+            return;
+        }
+
         synchronized (queueLock) {
             if (!acceptingAsyncTurns || memoryExecutor.isShutdown()) {
                 return;
@@ -185,20 +195,30 @@ public class MemoryManager implements ChatMemory {
 
     @Override
     public List<ChatMessage> messages() {
-        List<ChatMessage> allMessages;
+        List<ChatMessage> committedMessages;
+        List<ChatMessage> currentTurnMessages;
         String summary;
         List<String> facts;
         List<String> kb;
 
         synchronized (stateLock) {
-            allMessages = new ArrayList<>(shortTermMemory.getAllMessages());
+            committedMessages = new ArrayList<>(shortTermMemory.getAllMessages());
+            currentTurnMessages = new ArrayList<>(inFlightMessages);
             summary = summarizer.getLatestSummary();
             facts = new ArrayList<>(tempRetrievedFacts);
             kb = new ArrayList<>(tempRetrievedKnowledge);
         }
 
+        List<ChatMessage> allMessages = new ArrayList<>(committedMessages.size() + currentTurnMessages.size());
+        allMessages.addAll(committedMessages);
+        allMessages.addAll(currentTurnMessages);
+
         List<ChatMessage> result = new ArrayList<>();
-        allMessages.stream().filter(m -> m instanceof SystemMessage).findFirst().ifPresent(result::add);
+        allMessages.stream()
+                .filter(SystemMessage.class::isInstance)
+                .map(SystemMessage.class::cast)
+                .reduce((ignored, latest) -> latest)
+                .ifPresent(result::add);
 
         if (memoryFeatures.isEnableSummary() && summary != null && !summary.isEmpty()) {
             result.add(SystemMessage.from("【历史总结】\n" + summary));
@@ -217,7 +237,38 @@ public class MemoryManager implements ChatMemory {
     @Override
     public void add(ChatMessage m) {
         synchronized (stateLock) {
+            if (turnActive) {
+                inFlightMessages.add(m);
+                return;
+            }
             shortTermMemory.add(m);
+        }
+    }
+
+    public void commitTurn() {
+        synchronized (stateLock) {
+            if (!turnActive) {
+                return;
+            }
+
+            List<ChatMessage> committedMessages = inFlightMessages.stream()
+                    .map(ChatMessageTextExtractor::sanitizeForHistory)
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            for (ChatMessage committedMessage : committedMessages) {
+                shortTermMemory.add(committedMessage);
+            }
+
+            inFlightMessages = new ArrayList<>();
+            turnActive = false;
+        }
+    }
+
+    public void abortTurn() {
+        synchronized (stateLock) {
+            inFlightMessages = new ArrayList<>();
+            turnActive = false;
         }
     }
 
@@ -225,6 +276,10 @@ public class MemoryManager implements ChatMemory {
     public void clear() {
         synchronized (stateLock) {
             shortTermMemory.clear();
+            tempRetrievedFacts = new ArrayList<>();
+            tempRetrievedKnowledge = new ArrayList<>();
+            inFlightMessages = new ArrayList<>();
+            turnActive = false;
         }
     }
 

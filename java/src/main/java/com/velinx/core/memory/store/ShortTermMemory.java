@@ -7,7 +7,6 @@ import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.ChatMessageDeserializer;
 import dev.langchain4j.data.message.ChatMessageSerializer;
 import dev.langchain4j.data.message.SystemMessage;
-import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.data.message.UserMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,12 +87,6 @@ public class ShortTermMemory implements ShortChatHistoryStore {
                 String json = Files.readString(shortTermStorePath);
                 if (!json.isBlank()) {
                     for (ChatMessage message : ChatMessageDeserializer.messagesFromJson(json)) {
-                        if (message instanceof ToolExecutionResultMessage
-                                || (message instanceof AiMessage aiMessage && aiMessage.hasToolExecutionRequests())) {
-                            sanitized = true;
-                            continue;
-                        }
-
                         ChatMessage historySafeMessage = ChatMessageTextExtractor.sanitizeForHistory(message);
                         if (historySafeMessage == null) {
                             sanitized = true;

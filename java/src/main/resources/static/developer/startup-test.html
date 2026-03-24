@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VelinX Backend Startup Test</title>
+    <link rel="stylesheet" href="/developer/assets/shared.css">
+</head>
+<body>
+<div class="page-shell section-stack">
+    <div class="page-topbar">
+        <div>
+            <h1 class="page-title">后端启动测试页</h1>
+            <p class="page-subtitle">主页只展示当前服务状态。对话测试请进入模型配置页，语音测试请进入 TTS 配置页。</p>
+        </div>
+        <div class="topbar-actions">
+            <button class="secondary" id="refresh-status">刷新状态</button>
+            <a href="/developer/settings"><button>设置</button></a>
+        </div>
+    </div>
+
+    <div id="page-banner" class="banner"></div>
+
+    <section class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">服务状态</h2>
+            <span class="soft">主页不再承载 Bot / TTS 测试</span>
+        </div>
+        <div class="panel-body card-grid three">
+            <div class="status-card">
+                <div class="status-pill" id="service-pill">加载中</div>
+                <h3>服务概览</h3>
+                <div class="meta-list" id="service-meta"></div>
+            </div>
+            <div class="status-card">
+                <div class="status-pill" id="model-pill">加载中</div>
+                <h3>模型状态</h3>
+                <div class="meta-list" id="model-meta"></div>
+            </div>
+            <div class="status-card">
+                <div class="status-pill" id="tts-pill">加载中</div>
+                <h3>TTS 状态</h3>
+                <div class="meta-list" id="tts-meta"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">使用说明</h2>
+        </div>
+        <div class="panel-body">
+            <div class="helper-text">点击右上角“设置”进入模块选择页。模型配置页负责对话测试与模型配置，TTS 配置页负责语音测试与 TTS 配置。</div>
+        </div>
+    </section>
+</div>
+
+<script src="/developer/assets/debug-common.js"></script>
+<script>
+    const servicePill = document.getElementById("service-pill");
+    const modelPill = document.getElementById("model-pill");
+    const ttsPill = document.getElementById("tts-pill");
+    const serviceMeta = document.getElementById("service-meta");
+    const modelMeta = document.getElementById("model-meta");
+    const ttsMeta = document.getElementById("tts-meta");
+    const banner = document.getElementById("page-banner");
+
+    async function refreshStatus(showSuccessBanner = false) {
+        try {
+            const status = await DebugApi.getStatus();
+
+            DebugUi.applyPill(
+                servicePill,
+                status.serviceHealthy ? "ok" : (status.initialized ? "warn" : "error"),
+                status.serviceHealthy ? "服务正常" : (status.initialized ? "部分可用" : "未初始化")
+            );
+            DebugUi.writeMetaRows(serviceMeta, [
+                { key: "初始化", value: status.initialized ? "是" : "否" },
+                { key: "Bot Runtime", value: status.botReady ? "就绪" : "未就绪" },
+                { key: "TTS Runtime", value: status.ttsReady ? "就绪" : "未就绪" }
+            ]);
+
+            DebugUi.applyPill(
+                modelPill,
+                DebugUi.toneByReady(status.model.ready, status.model.configured),
+                status.model.ready ? "模型可用" : (status.model.configured ? "待检查" : "未配置")
+            );
+            DebugUi.writeMetaRows(modelMeta, [
+                { key: "Base URL", value: status.model.baseUrl || "未设置" },
+                { key: "Model", value: status.model.modelName || "未设置" },
+                { key: "API Key", value: DebugUi.formatMasked(status.model.apiKeyMasked, status.model.hasApiKey) }
+            ]);
+
+            DebugUi.applyPill(
+                ttsPill,
+                DebugUi.toneByReady(status.tts.ready, status.tts.configured),
+                status.tts.ready ? "TTS 可用" : (status.tts.configured ? "待检查" : "未配置")
+            );
+            DebugUi.writeMetaRows(ttsMeta, [
+                { key: "API URI", value: status.tts.apiUri || "未设置" },
+                { key: "Model", value: status.tts.model || "未设置" },
+                { key: "Voice", value: status.tts.voice || "未设置" },
+                { key: "API Key", value: DebugUi.formatMasked(status.tts.apiKeyMasked, status.tts.hasApiKey) }
+            ]);
+
+            if (showSuccessBanner) {
+                DebugUi.showBanner(banner, "ok", "状态已刷新。");
+            }
+        } catch (error) {
+            DebugUi.showBanner(banner, "error", `状态加载失败：${error.message}`);
+        }
+    }
+
+    document.getElementById("refresh-status").addEventListener("click", () => refreshStatus(true));
+    refreshStatus(false);
+</script>
+</body>
+</html>

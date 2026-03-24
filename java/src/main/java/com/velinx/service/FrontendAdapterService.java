@@ -8,6 +8,7 @@ import com.velinx.core.platform.config.BotWorkspaceResolver;
 import com.velinx.core.platform.config.ConfigManager;
 import com.velinx.core.platform.config.PathConfig;
 import com.velinx.dto.*; // 确保你建了这些 DTO
+import com.velinx.dto.frontendadapter.SessionStartRequest;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,7 +82,7 @@ public class FrontendAdapterService {
             }
 
             // 【创建新会话】解析路径并 new 一个新的模型包装对象
-            String workspaceDir = BotWorkspaceResolver.resolve(configuredWorkspaceDir);
+            String workspaceDir = resolveWorkspaceDir(normalized);
             FrontendSession nextSession = new FrontendSession(normalized, workspaceDir);
 
             // 赋值给全局变量，表示当前系统正在服务这个 Session
@@ -335,15 +336,31 @@ public class FrontendAdapterService {
 
     // --- 以下为内部逻辑辅助方法（数据清洗） ---
 
-    private SessionStartRequest normalize(SessionStartRequest request) {
-        if (request == null) return new SessionStartRequest("AI", "1", false, null, null);
+    SessionStartRequest normalize(SessionStartRequest request) {
+        if (request == null) return new SessionStartRequest(
+                "AI",
+                "1",
+                false,
+                null,
+                null,
+                null
+        );
         return new SessionStartRequest(
                 normalizeText(request.name(), "AI"),
                 normalizeText(request.role(), "1"),
                 request.hasWorld(),
                 normalizeNullablePath(request.profilePath()),
-                normalizeNullablePath(request.worldPath())
+                normalizeNullablePath(request.worldPath()),
+                normalizeNullablePath(request.workPath())
         );
+    }
+
+    String resolveWorkspaceDir(SessionStartRequest request) {
+        String requestedWorkspaceDir = request == null ? null : normalizeNullablePath(request.workPath());
+        String effectiveWorkspaceDir = requestedWorkspaceDir != null
+                ? requestedWorkspaceDir
+                : normalizeNullablePath(configuredWorkspaceDir);
+        return BotWorkspaceResolver.resolve(effectiveWorkspaceDir);
     }
 
     private String normalizeText(String v, String fallback) {

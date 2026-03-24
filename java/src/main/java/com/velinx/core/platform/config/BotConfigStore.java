@@ -2,6 +2,7 @@ package com.velinx.core.platform.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.velinx.dto.ModelConfigPayload;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -25,7 +26,7 @@ public final class BotConfigStore {
         ObjectNode config = readConfig();
 
         if (baseUrl != null) {
-            config.put("BASE_URL_b", baseUrl);
+            config.put("BASE_URL_b", ModelConfigNormalizer.normalizeBaseUrl(baseUrl));
         }
         if (apiKey != null) {
             config.put("API_KEY_b", apiKey);
@@ -56,5 +57,21 @@ public final class BotConfigStore {
         }
 
         return (ObjectNode) objectMapper.readTree(content);
+    }
+
+    public ModelConfigPayload readModelConfig() throws IOException {
+        ObjectNode config = readConfig();
+        return new ModelConfigPayload(
+                ModelConfigNormalizer.normalizeBaseUrl(readText(config, "BASE_URL_b")),
+                readText(config, "API_KEY_b"),
+                readText(config, "MODEL_NAME_b")
+        );
+    }
+
+    private String readText(ObjectNode config, String fieldName) {
+        if (config == null || config.get(fieldName) == null || config.get(fieldName).isNull()) {
+            return "";
+        }
+        return config.get(fieldName).asText("");
     }
 }

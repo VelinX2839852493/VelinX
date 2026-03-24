@@ -38,6 +38,15 @@ function saveBackendConfig(config) {
         };
     }
 
+    try {
+        BaseHandler.refreshBackendClient();
+    } catch (error) {
+        return {
+            success: false,
+            error: error.message,
+        };
+    }
+
     return {
         success: true,
         config: nextConfig,

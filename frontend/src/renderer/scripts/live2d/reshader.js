@@ -292,6 +292,50 @@ document.addEventListener('mousemove', (e) => {
 
 // ===================== IPC 通信 =====================
 
+function dispatchAvatarSignal(signal) {
+    if (!avatarManager || !signal || typeof signal !== 'object') {
+        return;
+    }
+
+    try {
+        switch (signal.type) {
+        case 'focus':
+            if (typeof avatarManager.setFocusOverride === 'function') {
+                avatarManager.setFocusOverride({
+                    x: signal.x,
+                    y: signal.y,
+                    durationMs: signal.durationMs
+                });
+            }
+            break;
+        case 'blink':
+            if (typeof avatarManager.triggerBlink === 'function') {
+                avatarManager.triggerBlink({
+                    doubleBlink: !!signal.doubleBlink
+                });
+            }
+            break;
+        case 'attention':
+            if (typeof avatarManager.triggerAttentionPose === 'function') {
+                avatarManager.triggerAttentionPose({
+                    intensity: signal.intensity,
+                    durationMs: signal.durationMs
+                });
+            }
+            break;
+        case 'reset':
+            if (typeof avatarManager.clearOverrides === 'function') {
+                avatarManager.clearOverrides();
+            }
+            break;
+        default:
+            break;
+        }
+    } catch (error) {
+        console.error('avatar-signal dispatch failed:', error);
+    }
+}
+
 ipcRenderer.on('config-updated', (event, newConfig) => {
     console.log('接收到新配置:', newConfig);
         // 【修复 1】更新全局 config，避免 clearErrorState 恢复旧背景
@@ -337,6 +381,10 @@ ipcRenderer.on('toggle-hit-area', () => {
 ipcRenderer.on('global-mouse-move', (event, data) => {
     globalMouseX = data.x;
     globalMouseY = data.y;
+});
+
+ipcRenderer.on('avatar-signal', (event, signal) => {
+    dispatchAvatarSignal(signal);
 });
 
 window.addEventListener('contextmenu', (e) => {
